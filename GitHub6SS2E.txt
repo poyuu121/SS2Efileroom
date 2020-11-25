@@ -11,7 +11,8 @@ GitHub 練習
 カキクケコ
 
 ●Bさん
-ABC
+ABCDE
+abcde
 
 ●Cさん
 123
