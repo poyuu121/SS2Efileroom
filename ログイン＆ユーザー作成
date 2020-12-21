@@ -1,0 +1,241 @@
+ログイン
+
+
+<?php
+//require 'password.php';
+// セッション開始
+session_start();
+
+$db['host'] = "localhost";  // DBサーバのURL
+$db['user'] = "Testhome";  // ユーザー名
+$db['pass'] = "Testhomevar.1";  // ユーザー名のパスワード
+$db['dbname'] = "test";  // データベース名
+
+// エラーメッセージの初期化
+$errorMessage = "";
+
+// ログインボタンが押された場合
+if (isset($_POST["login"])) {
+    
+    // 1. ユーザ名の入力チェック
+    if (empty($_POST["username"])) {  //値が空のとき
+        $errorMessage = 'ユーザー名が未入力です。';
+    } 
+    if (empty($_POST["password"])) {
+        $errorMessage = 'パスワードが未入力です。';
+    }
+    
+    if (!empty($_POST["userid"]) && !empty($_POST["password"])) {
+        // 入力したユーザIDを格納
+        $userid = $_POST["userid"];
+
+        // 2. ユーザIDとパスワードが入力されていたら認証する
+        $dsn = sprintf('mysql: host=%s; dbname=%s; charset=utf8', $db['host'], $db['dbname']);
+        
+        // 3. エラー処理
+        try {
+            $pdo = new PDO($dsn, $db['user'], $db['pass'], array(PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION));
+
+            $stmt = $pdo->prepare('SELECT * FROM userData WHERE name = ?');
+            $stmt->execute(array($userid));
+
+            $password = $_POST["password"];
+
+            if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                if (password_verify($password, $row['password'])) {
+                    session_regenerate_id(true);
+
+                    // 入力したIDのユーザー名を取得
+                    $id = $row['id'];
+                    $sql = "SELECT * FROM userData WHERE id = $id";  //入力したIDからユーザー名を取得
+                    $stmt = $pdo->query($sql);
+                    foreach ($stmt as $row) {
+                        $row['name'];  // ユーザー名
+                    }
+                    $_SESSION["NAME"] = $row['name'];
+                    header("Location: Main.php");  // メイン画面へ遷移
+                    exit();  // 処理終了
+                } else {
+                    // 認証失敗
+                    $errorMessage = 'ユーザーIDあるいはパスワードに誤りがあります。';
+                }
+            } else {
+                // 4. 認証成功なら、セッションIDを新規に発行する
+                // 該当データなし
+                $errorMessage = 'ユーザーIDあるいはパスワードに誤りがあります。';
+            }
+        } catch (PDOException $e) {
+            $errorMessage = 'データベースエラー';
+            //$errorMessage = $sql;
+            // $e->getMessage() でエラー内容を参照可能（デバッグ時のみ表示）
+            // echo $e->getMessage();
+        }
+    }
+}
+?>
+
+<!doctype html>
+<html>
+    <head>
+            <meta charset="UTF-8">
+            <title>ログイン</title>
+            <link rel="stylesheet" href="style.css">
+    </head>
+    <body class="box">
+        <h1>ログイン画面</h1>
+        <form id="loginForm" name="loginForm" action="" method="POST">
+            <fieldset>
+                <legend>ログインフォーム</legend>
+                <div><font color="#ff0000"><?php echo htmlspecialchars($errorMessage, ENT_QUOTES); ?></font></div>
+                
+                <label for="userid">ユーザー名</label><input type="text" id="userid" name="userid" placeholder="ユーザーIDを入力" value="<?php if (!empty($_POST["userid"])) {echo htmlspecialchars($_POST["userid"], ENT_QUOTES);} ?>">
+                
+                
+                <label for="password">パスワード</label><input type="password" id="password" name="password" value="" placeholder="パスワードを入力">
+                
+                <input type="submit" id="login" name="login" value="ログイン">
+            </fieldset>
+        </form>
+        
+        <form action="SignUp.php">
+            <fieldset>          
+                <legend>新規登録フォーム</legend>
+                <input type="submit" value="新規登録">
+            </fieldset>
+        </form>
+    </body>
+</html>
+
+
+新規作成
+
+<?php
+//require 'password.php';   // password_hash()はphp 5.5.0以降の関数のため、バージョンが古くて使えない場合に使用
+// セッション開始
+session_start();
+
+$db['host'] = "localhost";  // DBサーバのURL
+$db['user'] = "Testhome";  // ユーザー名
+$db['pass'] = "Testhomevar.1";  // ユーザー名のパスワード
+$db['dbname'] = "test";  // データベース名
+
+// エラーメッセージ、登録完了メッセージの初期化
+$errorMessage = "";
+$signUpMessage = "";
+
+// ログインボタンが押された場合
+if (isset($_POST["signUp"])) {
+    // 1. ユーザIDの入力チェック
+    if (empty($_POST["username"])) {  // 値が空のとき
+        $errorMessage = 'ユーザー名が未入力です。';
+    } else if (empty($_POST["password"])) {
+        $errorMessage = 'パスワードが未入力です。';
+    } else if (empty($_POST["password2"])) {
+        $errorMessage = 'パスワードが未入力です。';
+    }
+    
+    //ユーザ欄、パスワード欄（1,2）空欄なし　かつ　パスワード１＝パスワード２
+    if (!empty($_POST["username"]) && !empty($_POST["password"]) && !empty($_POST["password2"]) && $_POST["password"] === $_POST["password2"]) {
+        // 入力したユーザ名とパスワードを格納
+        $username = $_POST["username"];
+        $password = $_POST["password"];
+    
+
+        // 2. ユーザ名とパスワードが入力されていたら認証する
+        $dsn = sprintf('mysql: host=%s; dbname=%s; charset=utf8', $db['host'], $db['dbname']);
+
+        // 3.データベース挿入・エラー処理
+        try {
+            $pdo = new PDO($dsn, $db['user'], $db['pass'], array(PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION));
+            
+            //ユーザー名、パスワードをSQLに挿入
+            $stmt = $pdo->prepare("INSERT INTO userdata(name, password) VALUES (?, ?)");
+
+            $stmt->execute(array($username, password_hash($password, PASSWORD_DEFAULT)));  // パスワードのハッシュ化を行う
+            
+            $userid = $pdo->lastinsertid();  // 登録した(DB側でauto_incrementした)IDを$useridに入れる
+
+            // ログイン時に使用するユーザ名とパスワード
+            $signUpMessage = '登録が完了しました。あなたの登録IDは '. $userid. 'ユーザ名は'. $username.' です。パスワードは '. $password. ' です。';  
+    
+        } catch (PDOException $e) {
+            $errorMessage = 'データベースエラー';
+            //$e->getMessage() でエラー内容を参照可能（デバッグ時のみ表示）
+            // echo $e->getMessage();
+        }
+    } else if($_POST["password"] != $_POST["password2"]) {
+        $errorMessage = 'パスワードに誤りがあります。';
+    }
+}
+?>
+
+<!doctype html>
+<html>
+    <head>
+            <meta charset="UTF-8">
+            <title>新規登録</title>
+    </head>
+    <body>
+        <h1>新規登録画面</h1>
+        <form id="loginForm" name="loginForm" action="" method="POST">
+            <fieldset>
+                <legend>新規登録フォーム</legend>
+                <div><font color="#ff0000"><?php echo htmlspecialchars($errorMessage, ENT_QUOTES); ?></font></div>
+                
+                <div><font color="#0000ff"><?php echo htmlspecialchars($signUpMessage, ENT_QUOTES); ?></font></div>
+                
+                <label for="username">ユーザー名</label><input type="text" id="username" name="username" placeholder="ユーザー名を入力" value="<?php if (!empty($_POST["username"])) {echo htmlspecialchars($_POST["username"], ENT_QUOTES);} ?>">
+                
+                <br>
+                
+                <label for="password">パスワード</label><input type="password" id="password" name="password" value="" placeholder="パスワードを入力">
+                
+                <br>
+                
+                <label for="password2">パスワード(確認用)</label><input type="password" id="password2" name="password2" value="" placeholder="再度パスワードを入力">
+                
+                <br>
+                <input type="submit" id="signUp" name="signUp" value="新規登録">
+            </fieldset>
+        </form>
+        <br>
+        <form action="Login.php">
+            <input type="submit" value="戻る">
+        </form>
+    </body>
+</html>
+
+
+ホーム画面（簡易版）
+<?php
+session_start();
+
+// ログイン状態チェック
+if (!isset($_SESSION["NAME"])) {
+    header("Location: Logout.php");
+    exit;
+}
+?>
+
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>メイン</title>
+    </head>
+    <body>
+        <h1>ホーム画面</h1>
+        <!-- ユーザーIDにHTMLタグが含まれても良いようにエスケープする -->
+        <p>ようこそ<u><?php echo htmlspecialchars($_SESSION["NAME"], ENT_QUOTES); ?></u>さん</p>  <!-- ユーザー名をechoで表示 -->
+        <ul>
+            <li><a href="Logout.php">ログアウト</a></li>
+            <li><a href="makeroom.php">ルーム作成</a></li>
+            <li><a href="findroom.php">ルーム検索</a></li>
+            <li><a href="userI.php">ユーザー設定</a></li>
+        </ul>
+        
+        <br>
+        
+        
+    </body>
+</html>
