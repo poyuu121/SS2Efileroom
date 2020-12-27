@@ -1,11 +1,11 @@
 <?php
 require_once 'functions.php';
 
-$pdo = connectDB();
+$pdo = connectDB();  // functions.php より
 
 if ($_SERVER['REQUEST_METHOD'] != 'POST') {
     // 画像を取得
-     $sql = 'SELECT * FROM images ORDER BY created_at DESC';  //保存履歴の新しい（降順）で表示
+    $sql = 'SELECT * FROM images ORDER BY created_at DESC';  //保存履歴の新しい（降順）で表示
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     $images = $stmt->fetchAll();  //DBの全データを所得
@@ -49,13 +49,21 @@ unset($pdo);
     <div class="row">
         <div class="col-md-8 border-right">
             <ul class="list-unstyled">
-                <?php for($i = 0; $i < count($images); $i++): ?> //5
+                <?php for($i = 0; $i < count($images); $i++): ?>
                     <li class="media mt-5">
                         <a href="#lightbox" data-toggle="modal" data-slide-to="<?= $i; ?>">
-                            <img src="image.php?id=<?= $images[$i]['image_id']; ?>" width="100px" height="auto" class="mr-3">  //8
+                            
+                            <iframe src="image.php?id=<?= $images[$i]['image_id']; ?>" width="auto" height="auto"></iframe>
+                            
+                            <a href="image.php?id=<?= $images[$i]['image_id']; ?>" download="<?= $images[$i]['image_name']; ?>">ダウンロード</a>
+                            
+                            <!-- <img src="image.php?id=<?= $images[$i]['image_id']; ?>" width="100px" height="auto" class="mr-3"> -->
+                            
+                            <!--   -->
+                            <!-- </a> -->
                         </a>
                         <div class="media-body">
-                            <h5><?= $images[$i]['image_name']; ?> (<?= number_format($images[$i]['image_size']/1000, 2); ?> KB)</h5>  //11
+                            <h5><?= $images[$i]['image_name']; ?> (<?= number_format($images[$i]['image_size']/1000, 2); ?> KB)</h5>
                             <a href="javascript:void(0);" 
                                 onclick="var ok = confirm('削除しますか？'); if (ok) location.href='delete.php?id=<?= $images[$i]['image_id']; ?>'">
                                 <i class="far fa-trash-alt"></i> 削除</a>
@@ -88,7 +96,7 @@ unset($pdo);
         <div class="carousel-inner">  
             <?php for ($i = 0; $i < count($images); $i++): ?>  //8
                 <div class="carousel-item <?php if ($i == 0) echo 'active'; ?>">
-                  <img src="image.php?id=<?= $images[$i]['image_id']; ?>" class="d-block w-100">  //10
+                  <img src="image.php?id=<?= $images[$i]['image_id']; ?>" class="d-block w-100">
                 </div>
             <?php endfor; ?>
         </div>
